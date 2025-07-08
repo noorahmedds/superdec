@@ -1,0 +1,50 @@
+import torch
+import torch.nn as nn
+
+from superdec.models.decoder import TransformerDecoder
+from superdec.models.decoder_layer import DecoderLayer
+from superdec.models.point_encoder import StackedPVConv
+from superdec.models.heads import SuperDecHead
+
+class SuperDec(nn.Module):
+    def __init__(self, ctx):
+        super(SuperDec, self).__init__()
+        self.n_layers = ctx.decoder.n_layers
+        self.n_heads = ctx.decoder.n_heads
+        self.n_queries = ctx.decoder.n_queries
+        self.deep_supervision = ctx.decoder.deep_supervision
+        self.pos_encoding_type = ctx.decoder.pos_encoding_type
+        self.dim_feedforward = ctx.decoder.dim_feedforward
+        self.emb_dims = ctx.point_encoder.l3.out_channels # output dimension of pvcnn
+
+        self.point_encoder = StackedPVConv(ctx.point_encoder)
+
+        decoder_layer = DecoderLayer(d_model=self.emb_dims, nhead=self.n_heads, dim_feedforward=self.dim_feedforward, 
+                                               batch_first=True, swapped_attention=ctx.decoder.swapped_attention)
+        self.layers = TransformerDecoder(decoder_layer=decoder_layer, n_layers=self.n_layers, 
+                                         max_len=self.n_queries, pos_encoding_type=self.pos_encoding_type, 
+                                         masked_attention=ctx.decoder.masked_attention)
+        
+        self.layers.project_queries = nn.Sequential(
+            nn.Linear(self.emb_dims, self.emb_dims),
+            nn.ReLU(),
+            nn.Linear(self.emb_dims, self.emb_dims),
+        )
+        self.heads = SuperDecHead(emb_dims=self.emb_dims)
+        init_queries = torch.zeros(self.n_queries + 1, self.emb_dims)
+        self.register_buffer('init_queries', init_queries) # TODO double check -> new codebase
+    
+    def forward(self, x):
+        point_features = self.point_encoder(x)
+
+        refined_queries_list, assign_matrices = self.layers(self.init_queries, point_features)
+        outdict_list = []
+
+        for i, q in enumerate(refined_queries_list):    
+            outdict_list += [self.heads(q[:,:-1,...])]
+            assign_matrix = assign_matrices[i]
+            outdict_list[i]['assign_matrix_pre_softmax'] = assign_matrix
+            assign_matrix = torch.softmax(assign_matrix, dim=2)
+            outdict_list[i]['assign_matrix'] = assign_matrix 
+            
+        return outdict_list
