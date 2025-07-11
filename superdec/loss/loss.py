@@ -139,7 +139,6 @@ class Loss(nn.Module):
 
         # Sample points and normals on superquadrics
         X_SQ, normals = sampling_from_parametric_space_to_equivalent_points(scale, shape, self.sampler)
-        X_SQ = X_SQ.detach()              # [B, P, S, 3]
         normals = normals.detach()        # [B, P, S, 3]
         normals = torch.nn.functional.normalize(normals, dim=-1)  # ensure unit normals
 
@@ -173,9 +172,6 @@ class Loss(nn.Module):
         return norm_05
     
     def forward(self, pc, normals, out_dict):
-        B, P = out_dict['scale'].shape[:2]
-        N = pc.shape[-1]
-
         pc_inver = transform_to_primitive_frame(pc, out_dict['trans'], out_dict['rotate'])
         normals_inver = transform_to_primitive_frame(normals, out_dict['trans'], out_dict['rotate'])
 
