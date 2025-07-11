@@ -62,4 +62,4 @@ We adapted some codes from some awesome repositories including [superquadric_par
 
 ## TODO
 
-- [ ] Code from pth to npz
+[ ] LM Optimization
