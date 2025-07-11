@@ -4,17 +4,20 @@ import viser
 import time
 from superdec.utils.predictions_handler import PredictionHandler 
 
-RESOLUTION = 32
+RESOLUTION = 10
 
 def main():
   server = viser.ViserServer()
   server.scene.set_up_direction([0.0, 1.0, 0.0])
   
-  epoch = 42
-  input_path = os.path.join('outputs', f'epoch_{str(epoch)}.npz')
-  predictions_sq = PredictionHandler.from_npz(input_path)
+  epoch = 175
+  input_path = os.path.join('/ephemeral/outputs/09-07-classic-par-1', f'{str(epoch)}_val.npz')
 
+  print("Opening npz...")
+  predictions_sq = PredictionHandler.from_npz(input_path)
+  print("Computing meshes...")
   meshes = predictions_sq.get_meshes(resolution=RESOLUTION)
+  print("Computing point clouds...")
   pcs = predictions_sq.get_segmented_pcs()
   names = predictions_sq.names
 

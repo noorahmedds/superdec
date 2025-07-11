@@ -1,10 +1,10 @@
+import os
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from trainer import Trainer
-from utils import build_model, build_optimizer, build_scheduler, build_dataloaders, build_loss
+from utils import build_model, build_optimizer, build_scheduler, build_dataloaders, build_loss, set_seed
 import torch
-import random
-import numpy as np
 try:
     import wandb
 except ImportError:
@@ -21,35 +21,16 @@ def to_str_dict(d):
 @hydra.main(config_path="../configs", config_name="train", version_base=None)
 def main(cfg: DictConfig):
     # Set seeds for reproducibility
-    
-    seed = getattr(cfg, "seed", 42)
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-    print(f"Set seed to {seed}")
+    set_seed(cfg.seed)
+    print(f"Set seed to {cfg.seed}")
 
     device = torch.device(cfg.device if torch.cuda.is_available() else "cpu")
 
     run = None
-    if getattr(cfg, "use_wandb", False) and wandb is not None:
-        # Convert DictConfig to a flat dict with string keys for wandb (only top-level keys)
-        cfg_container = OmegaConf.to_container(cfg, resolve=True)
-        if isinstance(cfg_container, dict):
-            config_dict = {str(k): v for k, v in cfg_container.items() if not isinstance(v, (dict, list))}
-        else:
-            config_dict = {}
-        run_name = None
-        if hasattr(cfg, "wandb") and hasattr(cfg.wandb, "name"):
-            run_name = cfg.wandb.name
+    if cfg.use_wandb and wandb is not None:
         run = wandb.init(
-            project="superdec",
-            config=config_dict,
-            name=run_name
+            project=cfg.wandb.project,
+            name=cfg.run_name
         )
 
     model = build_model(cfg).to(device)
@@ -64,25 +45,31 @@ def main(cfg: DictConfig):
     # Resume from checkpoint if specified
     start_epoch = 0
     best_val_loss = float('inf')
-    if hasattr(cfg, 'checkpoints') and getattr(cfg.checkpoints, 'resume_from', None):
-        checkpoint_path = cfg.checkpoints.resume_from
+
+    checkpoint_path = getattr(cfg.checkpoints.resume_from, 'resume_from', None)
+    if checkpoint_path:
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        if scheduler is not None and checkpoint.get('scheduler_state_dict') is not None:
-            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        start_epoch = checkpoint.get('epoch', 0) + 1
+        
+        if cfg.checkpoints.keep_epoch:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            if scheduler is not None and checkpoint.get('scheduler_state_dict') is not None:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            start_epoch = checkpoint.get('epoch', 0) + 1
         best_val_loss = checkpoint.get('val_loss', float('inf'))
         print(f"Resumed from checkpoint {checkpoint_path} at epoch {start_epoch}, best_val_loss={best_val_loss}")
 
-    # Save hydra config to wandb as artifact if enabled
+    cfg.trainer.save_path = os.path.join(cfg.trainer.save_path, cfg.run_name)
+    if not os.path.exists(cfg.trainer.save_path):
+        os.makedirs(cfg.trainer.save_path, exist_ok=True)
+    # save cfg in save path as yaml
+    with open(os.path.join(cfg.trainer.save_path, "config.yaml"), "w") as fp:
+        OmegaConf.save(cfg, f=fp)
+
     if run is not None:
-        from hydra import compose, initialize
-        import os
-        config_path = os.getcwd()
-        config_file = os.path.join(config_path, '.hydra', 'config.yaml')
-        if os.path.exists(config_file):
-            run.save(config_file)
+        artifact = wandb.Artifact(name="config", type="config")
+        artifact.add_file(os.path.join(cfg.trainer.save_path, "config.yaml"))
+        run.log_artifact(artifact)
 
     trainer = Trainer(model, optimizer, scheduler, dataloaders, loss_fn, cfg.trainer, run, start_epoch=start_epoch, best_val_loss=best_val_loss)
     trainer.train()

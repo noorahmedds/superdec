@@ -19,10 +19,48 @@ class PredictionHandler:
         self.colors = generate_ncolors(self.translation.shape[1])  # Generate colors for each object
 
     
+    def save_npz(self, filepath):
+        """Save accumulated outputs to compressed npz file."""
+        np.savez_compressed(
+            filepath,
+            names=np.array(self.names),
+            pc=np.stack(self.pc),
+            assign_matrix=np.stack(self.assign_matrix),
+            scale=np.stack(self.scale),
+            rotation=np.stack(self.rotation),
+            translation=np.stack(self.translation),
+            exponents=np.stack(self.exponents),
+            exist=np.stack(self.exist),
+        )
+    
     @classmethod
     def from_npz(cls, path: str):
         data = np.load(path, allow_pickle=True)
         return cls({key: data[key] for key in data.files})
+    
+    @classmethod # TODO test!!
+    def from_outdict(cls, outdict, pcs, names):
+        predictions = {
+            'names': names, 
+            'pc': pcs.cpu().numpy(), 
+            'assign_matrix': outdict['assign_matrix'].cpu().numpy(), 
+            'scale': outdict['scale'].cpu().numpy(), 
+            'rotation': outdict['rotate'].cpu().numpy(),
+            'translation': outdict['trans'].cpu().numpy(), 
+            'exponents': outdict['shape'].cpu().numpy(), 
+            'exist': outdict['exist'].cpu().numpy()
+        }
+        return cls(predictions)
+
+    def append_outdict(self, outdict, pcs, names):
+        self.names = np.concatenate((self.names, names), axis=0)
+        self.pc = np.concatenate((self.pc, pcs.cpu().numpy()), axis=0)
+        self.assign_matrix = np.concatenate((self.assign_matrix, outdict['assign_matrix'].cpu().numpy()), axis=0)
+        self.scale = np.concatenate((self.scale, outdict['scale'].cpu().numpy()), axis=0)
+        self.rotation = np.concatenate((self.rotation, outdict['rotate'].cpu().numpy()), axis=0)
+        self.translation = np.concatenate((self.translation, outdict['trans'].cpu().numpy()), axis=0)
+        self.exponents = np.concatenate((self.exponents, outdict['shape'].cpu().numpy()), axis=0)
+        self.exist = np.concatenate((self.exist, outdict['exist'].cpu().numpy()), axis=0)
     
     def get_segmented_pc(self, index):
         if isinstance(self.assign_matrix, torch.Tensor):
@@ -47,21 +85,22 @@ class PredictionHandler:
             pcs.append(pc)
         return pcs
 
-    def get_meshes(self, resolution: int = 100):
+    def get_meshes(self, resolution: int = 100, colors=True):
         meshes = []
         B = self.scale.shape[0]
         for b in range(B):
-            mesh = self.get_mesh(b, resolution)
+            mesh = self.get_mesh(b, resolution, colors)
             meshes.append(mesh)
         return meshes
 
-    def get_mesh(self, index, resolution: int = 100):
+    def get_mesh(self, index, resolution: int = 100, colors=True):
         P = self.scale.shape[1]
 
         vertices = []
         faces = []
-        v_colors = []
-        f_colors = []
+        if colors:
+            v_colors = []
+            f_colors = []
         os_vertices = 0
         for p in range(P):
             if self.exist[index, p] > 0.5:
@@ -69,20 +108,26 @@ class PredictionHandler:
                     self.scale[index, p], self.exponents[index, p],
                     self.rotation[index, p], self.translation[index, p], resolution
                 )
-                cur_color = self.colors[p]
+                
                 vertices_cur, faces_cur = mesh
 
                 vertices.append(vertices_cur)
                 faces.append(faces_cur + os_vertices) 
-                v_colors.append(np.ones((vertices_cur.shape[0],3)) * cur_color) 
-                f_colors.append(np.ones((faces_cur.shape[0],3)) * cur_color)
+
+                if colors:
+                    cur_color = self.colors[p]
+                    v_colors.append(np.ones((vertices_cur.shape[0],3)) * cur_color) 
+                    f_colors.append(np.ones((faces_cur.shape[0],3)) * cur_color)
 
                 os_vertices += len(vertices_cur)
         vertices = np.concatenate(vertices)
         faces = np.concatenate(faces)
-        v_colors = np.concatenate(v_colors)/255.0
-        f_colors = np.concatenate(f_colors)/255.0
-        mesh = trimesh.Trimesh(vertices, faces, face_colors=f_colors, vertex_colors=v_colors)
+        if colors:
+            v_colors = np.concatenate(v_colors)/255.0
+            f_colors = np.concatenate(f_colors)/255.0
+            mesh = trimesh.Trimesh(vertices, faces, face_colors=f_colors, vertex_colors=v_colors)
+        else:
+            mesh = trimesh.Trimesh(vertices, faces)
                 
         return mesh
 

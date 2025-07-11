@@ -3,13 +3,13 @@ use_wandb: true
 wandb:
   project: superdec
   entity: elisabettafedele99
-  name: 30-06-debug #-sps-everywhere
+run_name: 10-07-debug #-sps-everywhere
 dataset: shapenet  #shapenetOverfit 
 device: cuda
 
 checkpoints:
-  path: outputs/models/checkpoints
-  resume_from: #/local/home/efedele/Programming/superdec/outputs/epoch_5.pt
+  resume_from: #/ephemeral/outputs/epoch_500.pt #/local/home/efedele/Programming/superdec/outputs/epoch_5.pt
+  keep_epoch: False
 
 superdec:
   decoder:
@@ -55,15 +55,15 @@ superdec:
         eps: 0  
 
 shapenet:
-  path: /media/efedele/data/ShapeNet
-  categories: ['03001627'] 
+  path: data/ShapeNet
+  categories: null #['03001627'] 
   normalize: False
 
 trainer:
-  save_path: outputs
-  save_every_n_epochs: 5
-  num_epochs: 100
-  batch_size: 8 #\16
+  save_path: /ephemeral/outputs
+  save_every_n_epochs: 1
+  num_epochs: 500
+  batch_size: 4 #\16
   num_workers: 4
   evaluate_every_n_epochs: 1
   augmentations: True
@@ -71,7 +71,7 @@ optimizer:
   lr: 1e-4 #1e-4   0.001
   weight_decay: 0 # default
   betas: [0.9, 0.999] # default
-  enable_scheduler: False
+  enable_scheduler: True
 
 scheduler:  
   _target_: torch.optim.lr_scheduler.OneCycleLR 

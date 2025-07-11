@@ -4,6 +4,8 @@ from superdec.superdec import SuperDec
 from superdec.data.dataloader import ShapeNet
 from superdec.loss.loss import Loss
 from torch.optim import Adam
+import random
+import numpy as np
 import hydra
 
 def build_model(cfg):
@@ -26,7 +28,6 @@ def build_dataloaders(cfg):
     else:
         raise ValueError(f"Unsupported dataset {cfg.dataset}")
 
-
     train_loader = DataLoader(train_ds, batch_size=cfg.trainer.batch_size, shuffle=True,
                               num_workers=cfg.trainer.num_workers, pin_memory=True)
     val_loader = DataLoader(val_ds, batch_size=cfg.trainer.batch_size, shuffle=False,
@@ -36,3 +37,13 @@ def build_dataloaders(cfg):
 
 def build_loss(cfg):
     return Loss(cfg.loss)
+
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False

@@ -23,7 +23,7 @@ def normalize_points(points):
 
 
 def get_transforms(split: str, cfg):
-    if not cfg.trainer.augmentations or split != 'train':
+    if split != 'train' or not cfg.trainer.augmentations:
         return None
 
     return Compose([
@@ -76,13 +76,18 @@ class ShapeNet(Dataset):
     def __getitem__(self, idx):
         model = self.models[idx]
         model_path = os.path.join(self.data_root, model['category'], model['model_id'])
+        
 
-        pc_data = np.load(os.path.join(model_path, "pointcloud.npz"))
-
-        idxs = np.random.choice(pc_data["points"].shape[0], 4096, replace=False)
-
-        points = pc_data["points"][idxs]
-        normals = pc_data["normals"][idxs]
+        if self.split == 'test':
+            pc_data = np.load(os.path.join(model_path, "pointcloud_4096.npz"))
+            points = pc_data["points"]
+            normals = pc_data["normals"]
+        else:
+            pc_data = np.load(os.path.join(model_path, "pointcloud.npz"))
+            n_points = pc_data["points"].shape[0]
+            idxs = np.random.choice(n_points, 4096, replace=False)
+            points = pc_data["points"][idxs]
+            normals = pc_data["normals"][idxs]
 
         if self.normalize:
             points, translation, scale  = normalize_points(points)

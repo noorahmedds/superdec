@@ -1,10 +1,29 @@
 {
     "configurations": [
+
         {
             "type": "debugpy",
             "request": "launch",
             "name": "Train",
             "program": "${workspaceFolder}/train/train.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Evaluate",
+            "program": "${workspaceFolder}/superdec/evaluate/evaluate.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "type": "debugpy",
+            "request": "launch",
+            "name": "Save npz",
+            "program": "${workspaceFolder}/superdec/evaluate/to_npz.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "envFile": "${workspaceFolder}/.env",

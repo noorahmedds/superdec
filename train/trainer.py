@@ -22,44 +22,13 @@ class Trainer:
         self.wandb_run = wandb_run
         self.best_val_loss = best_val_loss
         self.start_epoch = start_epoch
-    
-    def accumulate_outputs(self, batch, outdicts, all_outputs):
-        """Accumulate model outputs for saving to npz file."""
-        out = outdicts[-1]
-        names = batch['model_id']
-        pc = batch['points'].cpu().numpy()
 
-        for i in range(pc.shape[0]):
-            all_outputs['names'].append(names[i])
-            all_outputs['pc'].append(pc[i])
-            all_outputs['assign_matrix'].append(out['assign_matrix'][i].cpu().numpy())
-            all_outputs['scale'].append(out['scale'][i].cpu().numpy())
-            all_outputs['rotation'].append(out['rotate'][i].cpu().numpy())
-            all_outputs['translation'].append(out['trans'][i].cpu().numpy())
-            all_outputs['exponents'].append(out['shape'][i].cpu().numpy())
-            all_outputs['exist'].append(out['exist'][i].cpu().numpy())
-
-    def save_outputs_npz(self, all_outputs, filepath):
-        """Save accumulated outputs to compressed npz file."""
-        np.savez_compressed(
-            filepath,
-            names=np.array(all_outputs['names']),
-            pc=np.stack(all_outputs['pc']),
-            assign_matrix=np.stack(all_outputs['assign_matrix']),
-            scale=np.stack(all_outputs['scale']),
-            rotation=np.stack(all_outputs['rotation']),
-            translation=np.stack(all_outputs['translation']),
-            exponents=np.stack(all_outputs['exponents']),
-            exist=np.stack(all_outputs['exist']),
-        )
 
     def save_checkpoint(self, epoch, val_loss):
         """Save model checkpoint and log to wandb."""
         if self.save_path is None:
             return
             
-        os.makedirs(self.save_path, exist_ok=True)
-        
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
@@ -79,7 +48,7 @@ class Trainer:
             self.wandb_run.log_artifact(artifact)
 
     @torch.no_grad()
-    def evaluate(self, epoch, save_outputs=True):
+    def evaluate(self, epoch):
         """Evaluate model on validation set."""
         self.model.eval()
         loader = self.dataloaders['val']
@@ -93,7 +62,7 @@ class Trainer:
             'translation': [], 'exponents': [], 'exist': []
         }
 
-        for idx_batch, batch in enumerate(pbar):
+        for batch in pbar:
             pc, normals = batch['points'].cuda().float(), batch['normals'].cuda().float()
             outdicts = self.model(pc)
             loss, loss_dict = self.loss_fn(pc, normals, outdicts[-1])
@@ -104,20 +73,12 @@ class Trainer:
             # Accumulate loss components
             for k, v in loss_dict.items():
                 avg_loss_dict[k] = avg_loss_dict.get(k, 0.0) + v
-            
-            # Accumulate outputs for saving (only first batch if saving)
-            if self.save_path is not None and save_outputs and idx_batch == 0:
-                self.accumulate_outputs(batch, outdicts, all_outputs)
 
             pbar.set_postfix({k: f"{v / total_batches:.4f}" for k, v in avg_loss_dict.items()})
 
         # Compute averages
         for k in avg_loss_dict:
             avg_loss_dict[k] /= total_batches
-
-        # Save outputs if requested
-        if self.save_path is not None and save_outputs:
-            self.save_outputs_npz(all_outputs, os.path.join(self.save_path, f"epoch_{epoch+1}.npz"))
 
         return avg_loss_dict
 
@@ -180,7 +141,7 @@ class Trainer:
             
             # Evaluation phase (every epoch)
             do_save = ((epoch + 1) % save_every == 0) or (epoch == self.num_epochs - 1)
-            val_metrics = self.evaluate(epoch, save_outputs=do_save)
+            val_metrics = self.evaluate(epoch)
             val_loss = val_metrics.get('loss', None) or list(val_metrics.values())[0]
             
             # Log validation metrics to wandb (every epoch)

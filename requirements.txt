@@ -11,3 +11,4 @@ trimesh
 Cython
 matplotlib
 open3d
+viser
