@@ -16,7 +16,7 @@ def main(cfg: DictConfig) -> None:
     """
     Main evaluation entrypoint. Loads config, runs evaluation, prints results.
     """
-    
+
     device = cfg.get('device', 'cuda')
     # Dataloader
     dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
@@ -43,8 +43,8 @@ def main(cfg: DictConfig) -> None:
                 pred_handler = PredictionHandler.from_outdict(outdict, points, names)
             else:
                 pred_handler.append_outdict(outdict, points, names)
-                
-    pred_handler.save_npz(os.path.join(cfg.output_path, f'{str(cfg.epoch)}_{cfg.dataloader.split}.npz'))
+
+    pred_handler.save_npz(os.path.join(cfg.checkpoints_folder, f'{str(cfg.epoch)}_{cfg.dataloader.split}.npz')) # this step takes a lot of time (~1 minute)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ def normalize_points(points):
 
 
 def get_transforms(split: str, cfg):
-    if split != 'train' or not cfg.trainer.augmentations:
+    if split != 'train' or 'trainer' not in cfg or not cfg.trainer.augmentations:
         return None
 
     return Compose([

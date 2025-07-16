@@ -1,9 +1,9 @@
-checkpoints_folder: /ephemeral/outputs/09-07-classic-par-1
-checkpoint_file: epoch_200.pt
+checkpoints_folder: /ephemeral/outputs/09-07-classic-par-2
+checkpoint_file: epoch_1000.pt
 config_file: config.yaml
 device: "cuda"
 dataloader:
-  split: val
+  split: test
   batch_size: 128
   num_workers: 4
 shapenet:
@@ -11,4 +11,4 @@ shapenet:
   normalize: false
   categories: null
 evaluation:
-  resolution: 10 
+  resolution: 50 

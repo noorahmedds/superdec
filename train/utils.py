@@ -13,7 +13,10 @@ def build_model(cfg):
     return model.cuda() if torch.cuda.is_available() else model
 
 def build_optimizer(cfg, model):
-    return Adam(model.parameters(), lr=cfg.optimizer.lr, betas=cfg.optimizer.betas, weight_decay=cfg.optimizer.weight_decay)
+    if cfg.optimizer.only_heads :
+        return Adam(model.heads.parameters(), lr=cfg.optimizer.lr, betas=cfg.optimizer.betas, weight_decay=cfg.optimizer.weight_decay)
+    else:
+        return Adam(model.parameters(), lr=cfg.optimizer.lr, betas=cfg.optimizer.betas, weight_decay=cfg.optimizer.weight_decay)
 
 def build_scheduler(cfg, optimizer, step_per_epoch):
     if not cfg.optimizer.enable_scheduler:

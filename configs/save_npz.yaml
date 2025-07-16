@@ -1,5 +1,5 @@
-checkpoints_folder: /ephemeral/outputs/09-07-classic-par-1
-epoch: 175
+checkpoints_folder: /ephemeral/outputs/09-07-classic-par-3-heads-1000-points-cubes
+epoch: 5
 config_file: config.yaml
 device: "cuda"
 dataloader:
@@ -11,5 +11,4 @@ shapenet:
   normalize: false
   categories: null
 evaluation:
-  resolution: 10 
-output_path: /ephemeral/outputs/09-07-classic-par-1
+  resolution: 5 

@@ -47,8 +47,8 @@ def main(cfg: DictConfig):
     best_val_loss = float('inf')
 
     checkpoint_path = getattr(cfg.checkpoints.resume_from, 'resume_from', None)
-    if checkpoint_path:
-        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+    if cfg.checkpoints.resume_from is not None:
+        checkpoint = torch.load(cfg.checkpoints.resume_from, map_location=device, weights_only=False)
         model.load_state_dict(checkpoint['model_state_dict'])
         
         if cfg.checkpoints.keep_epoch:

@@ -4,14 +4,14 @@ import viser
 import time
 from superdec.utils.predictions_handler import PredictionHandler 
 
-RESOLUTION = 10
+RESOLUTION = 25
 
 def main():
   server = viser.ViserServer()
   server.scene.set_up_direction([0.0, 1.0, 0.0])
   
-  epoch = 175
-  input_path = os.path.join('/ephemeral/outputs/09-07-classic-par-1', f'{str(epoch)}_val.npz')
+  epoch = 5
+  input_path = os.path.join('/ephemeral/outputs/09-07-classic-par-3-heads-1000-points-cubes', f'{str(epoch)}_val.npz')
 
   print("Opening npz...")
   predictions_sq = PredictionHandler.from_npz(input_path)
