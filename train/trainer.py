@@ -2,6 +2,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 import torch
+from utils import is_main_process
 
 try:
     import wandb
@@ -10,7 +11,7 @@ except ImportError:
 
 
 class Trainer:
-    def __init__(self, model, optimizer, scheduler, dataloaders, loss_fn, ctx, wandb_run=None, start_epoch=0, best_val_loss=float('inf')):
+    def __init__(self, model, optimizer, scheduler, dataloaders, loss_fn, ctx, wandb_run=None, start_epoch=0, best_val_loss=float('inf'), is_distributed=False, train_sampler=None):
         self.model = model
         self.optimizer = optimizer
         self.scheduler = scheduler
@@ -22,26 +23,26 @@ class Trainer:
         self.wandb_run = wandb_run
         self.best_val_loss = best_val_loss
         self.start_epoch = start_epoch
+        self.is_distributed = is_distributed
+        self.train_sampler = train_sampler
 
 
     def save_checkpoint(self, epoch, val_loss):
         """Save model checkpoint and log to wandb."""
-        if self.save_path is None:
+        if not is_main_process() or self.save_path is None:
             return
-            
+        # Save model.module.state_dict() if using DDP
+        model_to_save = self.model.module if hasattr(self.model, 'module') else self.model
         checkpoint = {
-            'model_state_dict': self.model.state_dict(),
+            'model_state_dict': model_to_save.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
             'scheduler_state_dict': self.scheduler.state_dict() if self.scheduler is not None else None,
             'epoch': epoch,
             'val_loss': val_loss
         }
-        
         ckpt_filename = f'epoch_{epoch+1}.pt'
         ckpt_path = os.path.join(self.save_path, ckpt_filename)
         torch.save(checkpoint, ckpt_path)
-        
-        # Log checkpoint as wandb artifact
         if self.wandb_run is not None and wandb is not None:
             artifact = wandb.Artifact(ckpt_filename, type='model')
             artifact.add_file(ckpt_path)
@@ -86,6 +87,8 @@ class Trainer:
         """Train for one epoch."""
         self.model.train()
         loader = self.dataloaders['train']
+        if self.is_distributed and self.train_sampler is not None:
+            self.train_sampler.set_epoch(epoch)
         pbar = tqdm(loader, desc=f"Epoch {epoch+1}/{self.num_epochs}", leave=False)
 
         total_loss = 0.0
@@ -119,7 +122,7 @@ class Trainer:
             avg_loss_dict[k] /= total_batches
 
         # Log training metrics to wandb
-        if self.wandb_run is not None:
+        if self.wandb_run is not None and is_main_process():
             log_dict = {"train/loss": avg_loss}
             log_dict.update({f"train/{k}": v for k, v in avg_loss_dict.items()})
             
@@ -145,7 +148,7 @@ class Trainer:
             val_loss = val_metrics.get('loss', None) or list(val_metrics.values())[0]
             
             # Log validation metrics to wandb (every epoch)
-            if self.wandb_run is not None:
+            if self.wandb_run is not None and is_main_process():
                 self.wandb_run.log({f"val/{k}": v for k, v in val_metrics.items()}, step=epoch)
             
             # Save best checkpoint whenever validation loss improves

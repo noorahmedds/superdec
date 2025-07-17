@@ -10,7 +10,7 @@ def main():
   server = viser.ViserServer()
   server.scene.set_up_direction([0.0, 1.0, 0.0])
   
-  epoch = 5
+  epoch = 15
   input_path = os.path.join('/ephemeral/outputs/09-07-classic-par-3-heads-1000-points-cubes', f'{str(epoch)}_val.npz')
 
   print("Opening npz...")

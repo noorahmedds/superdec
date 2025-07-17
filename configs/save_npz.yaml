@@ -1,5 +1,5 @@
 checkpoints_folder: /ephemeral/outputs/09-07-classic-par-3-heads-1000-points-cubes
-epoch: 5
+epoch: 15
 config_file: config.yaml
 device: "cuda"
 dataloader:
