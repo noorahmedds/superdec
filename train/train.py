@@ -38,15 +38,6 @@ def main(cfg: DictConfig):
         )
 
     model = build_model(cfg).to(device)
-    if is_distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank])
-
-    dataloaders, train_sampler = build_dataloaders(cfg, is_distributed=is_distributed)
-
-    optimizer = build_optimizer(cfg, model)
-    scheduler = build_scheduler(cfg, optimizer, len(dataloaders['train'])) # None if disabled
-    loss_fn = build_loss(cfg).to(device)
-
     # Resume from checkpoint if specified
     start_epoch = 0
     best_val_loss = float('inf')
@@ -61,6 +52,16 @@ def main(cfg: DictConfig):
             start_epoch = checkpoint.get('epoch', 0) + 1
         best_val_loss = checkpoint.get('val_loss', float('inf'))
         print(f"Resumed from checkpoint {checkpoint_path} at epoch {start_epoch}, best_val_loss={best_val_loss}")
+    if is_distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], find_unused_parameters=False)
+
+    dataloaders, train_sampler = build_dataloaders(cfg, is_distributed=is_distributed)
+
+    optimizer = build_optimizer(cfg, model)
+    scheduler = build_scheduler(cfg, optimizer, len(dataloaders['train'])) # None if disabled
+    loss_fn = build_loss(cfg).to(device)
+
+    
 
     cfg.trainer.save_path = os.path.join(cfg.trainer.save_path, cfg.run_name)
     if is_main_process() and not os.path.exists(cfg.trainer.save_path):

@@ -1,7 +1,8 @@
-checkpoints_folder: /ephemeral/outputs/09-07-classic-par-3-heads-1000-points-cubes
-epoch: 15
+checkpoints_folder: /ephemeral/outputs/18-07-multigpu-normalized-low-sps-2nd-aprt
+epoch: 2000
 config_file: config.yaml
 device: "cuda"
+dataset: scene
 dataloader:
   split: val
   batch_size: 128
@@ -10,5 +11,9 @@ shapenet:
   path: "data/ShapeNet"
   normalize: false
   categories: null
+scene:
+  path: "data/replica"
+  name: 'office1'
+  z_up: true
 evaluation:
   resolution: 5 

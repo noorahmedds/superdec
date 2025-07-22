@@ -6,9 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 from superdec.superdec import SuperDec
 from superdec.utils.predictions_handler import PredictionHandler
-from superdec.utils.evaluation import get_outdict
-from superdec.loss.loss import Loss
-from superdec.data.dataloader import ShapeNet
+from superdec.data.dataloader import ShapeNet, Scene, denormalize_outdict, denormalize_points
 from typing import Dict, Any
 from tqdm import tqdm
 
@@ -19,7 +17,15 @@ def main(cfg: DictConfig) -> None:
 
     device = cfg.get('device', 'cuda')
     # Dataloader
-    dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
+    if cfg.dataset == 'shapenet':
+        dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
+        filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.dataloader.split}.npz'
+        z_up = False
+    elif cfg.dataset == 'scene':
+        dataset = Scene(cfg=cfg)
+        filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.scene.name}.npz'
+        z_up = cfg.scene.z_up
+
     dataloader = DataLoader(dataset, batch_size=cfg.dataloader.batch_size, shuffle=False, num_workers=cfg.dataloader.num_workers)
     ckp_path = os.path.join(cfg.checkpoints_folder, f'epoch_{str(cfg.epoch)}.pt')
     config_path = os.path.join(cfg.checkpoints_folder, cfg.config_file)
@@ -36,15 +42,18 @@ def main(cfg: DictConfig) -> None:
     with torch.no_grad():
         for i, b in tqdm(enumerate(dataloader)):
             points = b['points'].to(device).float()
-            outdict_list = model(points)
-            outdict = outdict_list[-1]  # Use last layer output
+            b['translation'] = b['translation'].to(device)
+            b['scale'] = b['scale'].to(device)
+            outdict = model(points)
+            outdict = denormalize_outdict(outdict, b['translation'], b['scale'], z_up)
+            points = denormalize_points(points, b['translation'], b['scale'], z_up)
             names = b.get('model_id', np.arange(points.shape[0]))
             if i == 0:
                 pred_handler = PredictionHandler.from_outdict(outdict, points, names)
             else:
                 pred_handler.append_outdict(outdict, points, names)
 
-    pred_handler.save_npz(os.path.join(cfg.checkpoints_folder, f'{str(cfg.epoch)}_{cfg.dataloader.split}.npz')) # this step takes a lot of time (~1 minute)
+    pred_handler.save_npz(os.path.join(cfg.checkpoints_folder, filename)) # this step takes a lot of time (~1 minute)
 
 
 if __name__ == "__main__":

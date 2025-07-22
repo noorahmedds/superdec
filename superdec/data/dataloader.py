@@ -1,10 +1,11 @@
 import os
+from glob import glob
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from superdec.data.transform import RotateAroundAxis3d, Scale3d, RandomMove3d, Compose
+from superdec.data.transform import RotateAroundAxis3d, Scale3d, RandomMove3d, Compose, rotate_around_axis
 
 
 SHAPENET_CATEGORIES = {
@@ -21,6 +22,21 @@ def normalize_points(points):
     points = points / scale
     return points, translation, scale
 
+def denormalize_points(points, translation, scale, z_up=False):
+    scale = scale[:,None,None]
+    translation = translation[:, None, :]
+    points = points * scale + translation
+    if z_up:
+        points = rotate_around_axis(points.cpu().numpy(), axis=(1,0,0), angle = np.pi/2, center_point=np.zeros(3))
+        points = torch.from_numpy(points)
+    return points
+
+def denormalize_outdict(outdict, translation, scale, z_up=False):
+    scale = scale[:,None,None]
+    translation = translation[:, None, :]
+    outdict['scale'] = outdict['scale'] * scale
+    outdict['trans'] = outdict['trans'] * scale + translation 
+    return outdict
 
 def get_transforms(split: str, cfg):
     if split != 'train' or 'trainer' not in cfg or not cfg.trainer.augmentations:
@@ -28,8 +44,8 @@ def get_transforms(split: str, cfg):
 
     return Compose([
         Scale3d(),
-        RotateAroundAxis3d(rotation_limit=np.pi / 24, axis=(0, 0, 1)),
-        RotateAroundAxis3d(rotation_limit=np.pi / 24, axis=(1, 0, 0)),
+        RotateAroundAxis3d(rotation_limit=np.pi / 2, axis=(0, 0, 1)),
+        RotateAroundAxis3d(rotation_limit=np.pi / 2, axis=(1, 0, 0)),
         RotateAroundAxis3d(rotation_limit=np.pi, axis=(0, 1, 0)),
         RandomMove3d(
             x_min=-0.1, x_max=0.1,
@@ -37,6 +53,47 @@ def get_transforms(split: str, cfg):
             z_min=-0.1, z_max=0.1
         ),
     ])
+
+
+class Scene(Dataset):
+    def __init__(self, cfg):
+        super().__init__()
+        self.path = os.path.join(cfg.scene.path, cfg.scene.name, 'pc')
+        self.z_up = cfg.scene.z_up 
+        self._gather_models()
+
+    def _gather_models(self):
+        self.models = [os.path.splitext(f)[0] for f in os.listdir(self.path) if f.endswith(".npz")]
+
+    def __len__(self):
+        return len(self.models)
+
+    def __getitem__(self, idx):
+        model = self.models[idx]
+
+        pc_data = np.load(os.path.join(self.path, f"{model}.npz"))
+        n_points = pc_data["points"].shape[0]
+
+        idxs = np.random.choice(n_points, 4096)
+        points = pc_data["points"][idxs]
+
+        if self.z_up:
+            points = rotate_around_axis(points, axis=(1,0,0), angle = -np.pi/2, center_point=np.zeros(3))
+
+        points, translation, scale  = normalize_points(points)
+
+        return {
+            "points": torch.from_numpy(points),
+            "translation": torch.from_numpy(translation),
+            "scale": scale,
+            "z_up": self.z_up,
+            "point_num": points.shape[0],
+            "model_id": model
+        }
+
+    def name(self):
+        return 'ShapeNet'
+
 
 
 class ShapeNet(Dataset):
@@ -78,7 +135,7 @@ class ShapeNet(Dataset):
         model_path = os.path.join(self.data_root, model['category'], model['model_id'])
         
 
-        if self.split == 'test':
+        if False: #TODO wait for downsampling to end
             pc_data = np.load(os.path.join(model_path, "pointcloud_4096.npz"))
             points = pc_data["points"]
             normals = pc_data["normals"]

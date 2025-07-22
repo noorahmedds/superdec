@@ -29,7 +29,7 @@ class SuperDecHead(nn.Module):
 
         exist = self.exist_activation(self.exist_head(x))
 
-        return {"scale": scale, "shape": shape, "q": q, "rotate": rotation, "trans": translation, "exist": exist}
+        return {"scale": scale, "shape": shape, "rotate": rotation, "trans": translation, "exist": exist}
         
     @staticmethod  
     def quat2mat(quat):

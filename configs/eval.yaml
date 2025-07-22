@@ -1,5 +1,5 @@
-checkpoints_folder: /ephemeral/outputs/09-07-classic-par-2
-checkpoint_file: epoch_1000.pt
+checkpoints_folder: /ephemeral/outputs/18-07-multigpu-normalized-low-sps-2nd-aprt
+checkpoint_file: epoch_2000.pt
 config_file: config.yaml
 device: "cuda"
 dataloader:
@@ -8,7 +8,7 @@ dataloader:
   num_workers: 4
 shapenet:
   path: "data/ShapeNet"
-  normalize: false
+  normalize: true
   categories: null
 evaluation:
-  resolution: 50 
+  resolution: 100 

@@ -94,6 +94,7 @@ class PredictionHandler:
                 meshes.append(mesh)
             except Exception as e:
                 print(f"Error generating mesh for index {b}: {e}")
+                meshes.append(None)
         return meshes
 
     def get_mesh(self, index, resolution: int = 100, colors=True):

@@ -21,7 +21,6 @@ class Trainer:
         self.num_epochs = ctx.num_epochs
         self.save_path = ctx.save_path
         self.wandb_run = wandb_run
-        self.best_val_loss = best_val_loss
         self.start_epoch = start_epoch
         self.is_distributed = is_distributed
         self.train_sampler = train_sampler
@@ -29,7 +28,7 @@ class Trainer:
 
     def save_checkpoint(self, epoch, val_loss):
         """Save model checkpoint and log to wandb."""
-        if not is_main_process() or self.save_path is None:
+        if not is_main_process() or self.save_path is None: #TODO check whether this is ever called (I think it is not)
             return
         # Save model.module.state_dict() if using DDP
         model_to_save = self.model.module if hasattr(self.model, 'module') else self.model
@@ -51,6 +50,8 @@ class Trainer:
     @torch.no_grad()
     def evaluate(self, epoch):
         """Evaluate model on validation set."""
+        if self.is_distributed and torch.distributed.get_rank() != 0:
+            return {}  # skip on non-zero ranks #TODO check whether this is ever called (I think it is not)
         self.model.eval()
         loader = self.dataloaders['val']
         pbar = tqdm(loader, desc=f"Eval  {epoch+1}/{self.num_epochs}", leave=False)
@@ -65,8 +66,8 @@ class Trainer:
 
         for batch in pbar:
             pc, normals = batch['points'].cuda().float(), batch['normals'].cuda().float()
-            outdicts = self.model(pc)
-            loss, loss_dict = self.loss_fn(pc, normals, outdicts[-1])
+            outdict = self.model(pc)
+            loss, loss_dict = self.loss_fn(pc, normals, outdict)
 
             total_loss += loss.item()
             total_batches += 1
@@ -80,7 +81,6 @@ class Trainer:
         # Compute averages
         for k in avg_loss_dict:
             avg_loss_dict[k] /= total_batches
-
         return avg_loss_dict
 
     def train_one_epoch(self, epoch):
@@ -97,8 +97,8 @@ class Trainer:
 
         for batch in pbar:
             pc, normals = batch['points'].cuda().float(), batch['normals'].cuda().float()
-            outdicts = self.model(pc)
-            loss, loss_dict = self.loss_fn(pc, normals, outdicts[-1])
+            outdict = self.model(pc)
+            loss, loss_dict = self.loss_fn(pc, normals, outdict)
 
             # Backward pass
             self.optimizer.zero_grad()
@@ -142,16 +142,15 @@ class Trainer:
             # Training phase
             self.train_one_epoch(epoch)
             
-            # Evaluation phase (every epoch)
-            do_save = ((epoch + 1) % save_every == 0) or (epoch == self.num_epochs - 1)
-            val_metrics = self.evaluate(epoch)
-            val_loss = val_metrics.get('loss', None) or list(val_metrics.values())[0]
-            
-            # Log validation metrics to wandb (every epoch)
-            if self.wandb_run is not None and is_main_process():
-                self.wandb_run.log({f"val/{k}": v for k, v in val_metrics.items()}, step=epoch)
-            
-            # Save best checkpoint whenever validation loss improves
-            if do_save: # val_loss < self.best_val_loss:
-                self.best_val_loss = val_loss
-                self.save_checkpoint(epoch, val_loss)
+            # Evaluation phase (every epoch in the main process)
+            if is_main_process():
+                val_metrics = self.evaluate(epoch)
+                val_loss = val_metrics.get('loss', None) or list(val_metrics.values())[0]
+
+                do_save = ((epoch + 1) % save_every == 0) or (epoch == self.num_epochs - 1)
+                if do_save: 
+                    self.save_checkpoint(epoch, val_loss)
+
+                # Log validation metrics to wandb (every epoch)
+                if self.wandb_run is not None:
+                    self.wandb_run.log({f"val/{k}": v for k, v in val_metrics.items()}, step=epoch)

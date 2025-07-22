@@ -8,7 +8,7 @@ from superdec.superdec import SuperDec
 from superdec.utils.predictions_handler import PredictionHandler
 from superdec.utils.evaluation import get_outdict
 from superdec.loss.loss import Loss
-from superdec.data.dataloader import ShapeNet
+from superdec.data.dataloader import ShapeNet, denormalize_outdict, denormalize_points
 from typing import Dict, Any
 from tqdm import tqdm
 
@@ -48,26 +48,25 @@ class Evaluator:
             for j, batch in tqdm(enumerate(self.dataloader)):
                 points = batch['points'].to(self.device).float()  # (B, N, 3)
                 normals = batch['normals'].to(self.device).float()
-                outdict_list = self.model(points)
-                outdict = outdict_list[-1]  # Use last layer output
-                predictions = {
-                    'names': batch.get('model_id', np.arange(points.shape[0])),
-                    'pc': points.cpu().numpy(),
-                    'assign_matrix': outdict['assign_matrix'].cpu().numpy(),
-                    'scale': outdict['scale'].cpu().numpy(),
-                    'rotation': outdict['rotate'].cpu().numpy(),
-                    'translation': outdict['trans'].cpu().numpy(),
-                    'exponents': outdict['shape'].cpu().numpy(),
-                    'exist': outdict['exist'].cpu().numpy(),
-                }
-                pred_handler = PredictionHandler(predictions)
+                batch['translation'] = batch['translation'].to(self.device)
+                batch['scale'] = batch['scale'].to(self.device)
+                names = batch.get('model_id', np.arange(points.shape[0]))
+
+                outdict = self.model(points)
+
+                outdict = denormalize_outdict(outdict, batch['translation'], batch['scale'])
+                points = denormalize_points(points, batch['translation'], batch['scale'])
+
+                pred_handler = PredictionHandler.from_outdict(outdict, points, names)
                 pred_meshes = pred_handler.get_meshes(resolution=self.mesh_resolution, colors=False)
-                gt_pcs = batch['points'].cpu().numpy()  # (B, N, 3)
+                
+                gt_pcs = points  # (B, N, 3)
                 exist = outdict['exist'].cpu().numpy()  # (B, P)
+                
                 for i, mesh in enumerate(pred_meshes):
                     pc_pred, idx = mesh.sample(gt_pcs.shape[1], return_index = True)
                     normals_pred = mesh.face_normals[idx] # get predicted normals
-                    gt_pc = gt_pcs[i]
+                    gt_pc = gt_pcs[i].cpu().numpy()
                     gt_normal = normals[i].cpu().numpy()
                     out_dict_cur = get_outdict(pc_pred, normals_pred, gt_pc, gt_normal)
                     out_dict_cur['num_primitives'] = (exist[i] > 0.5).sum()
