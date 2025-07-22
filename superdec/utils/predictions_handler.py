@@ -89,8 +89,11 @@ class PredictionHandler:
         meshes = []
         B = self.scale.shape[0]
         for b in range(B):
-            mesh = self.get_mesh(b, resolution, colors)
-            meshes.append(mesh)
+            try:
+                mesh = self.get_mesh(b, resolution, colors)
+                meshes.append(mesh)
+            except Exception as e:
+                print(f"Error generating mesh for index {b}: {e}")
         return meshes
 
     def get_mesh(self, index, resolution: int = 100, colors=True):

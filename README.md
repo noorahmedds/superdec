@@ -50,6 +50,7 @@ After, you should have the dataset in `data/ShapeNet` folder.
 To start a training on the ShapeNet dataset you can just run 
 ```bash
 python trainer/train.py
+torchrun --nproc_per_node=4 train/train.py
 ```
 
 ---
