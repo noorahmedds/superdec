@@ -5,6 +5,7 @@ from superdec.models.decoder import TransformerDecoder
 from superdec.models.decoder_layer import DecoderLayer
 from superdec.models.point_encoder import StackedPVConv
 from superdec.models.heads import SuperDecHead
+from superdec.lm_optimization.lm_optimizer import LMOptimizer
 
 class SuperDec(nn.Module):
     def __init__(self, ctx):
@@ -16,6 +17,9 @@ class SuperDec(nn.Module):
         self.pos_encoding_type = ctx.decoder.pos_encoding_type
         self.dim_feedforward = ctx.decoder.dim_feedforward
         self.emb_dims = ctx.point_encoder.l3.out_channels # output dimension of pvcnn
+        self.lm_optimization = False
+        if self.lm_optimization:
+            self.lm_optimizer = LMOptimizer()
 
         self.point_encoder = StackedPVConv(ctx.point_encoder)
 
@@ -46,5 +50,8 @@ class SuperDec(nn.Module):
             assign_matrix = assign_matrices[i]
             assign_matrix = torch.softmax(assign_matrix, dim=2)
             outdict_list[i]['assign_matrix'] = assign_matrix 
+
+        if self.lm_optimization:
+            outdict_list[-1] = self.lm_optimizer(outdict_list[-1], x)
             
         return outdict_list[-1]

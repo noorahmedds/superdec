@@ -1,5 +1,5 @@
-checkpoints_folder: /ephemeral/outputs/18-07-multigpu-normalized-low-sps-2nd-aprt
-epoch: 2000
+checkpoints_folder: /ephemeral/outputs/28-07-normalized-second
+epoch: 1000
 config_file: config.yaml
 device: "cuda"
 dataset: scene
@@ -9,11 +9,12 @@ dataloader:
   num_workers: 4
 shapenet:
   path: "data/ShapeNet"
-  normalize: false
+  normalize: true
   categories: null
 scene:
-  path: "data/replica"
-  name: 'office1'
+  path: "/ephemeral/scannetpp"
+  name: '2a1b555966'
   z_up: true
+  gt: true
 evaluation:
   resolution: 5 

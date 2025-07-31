@@ -3,12 +3,12 @@ use_wandb: true
 wandb:
   project: superdec
   entity: elisabettafedele99
-run_name: 21-07-multigpu-normalized-low-sps-2nd-part-06-SPS #-sps-everywhere
+run_name: 30-07-normalized-second-fps #-sps-everywhere
 dataset: shapenet  #shapenetOverfit 
 device: cuda
 
 checkpoints:
-  resume_from: /ephemeral/outputs/18-07-multigpu-normalized-low-sps/epoch_500.pt #/local/home/efedele/Programming/superdec/outputs/epoch_5.pt
+  resume_from: /ephemeral/outputs/28-07-normalized-first/epoch_500.pt #18-07-multigpu-normalized-low-sps/epoch_500.pt #/local/home/efedele/Programming/superdec/outputs/epoch_5.pt
   keep_epoch: False
 
 superdec:

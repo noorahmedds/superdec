@@ -1,14 +1,21 @@
-checkpoints_folder: /ephemeral/outputs/18-07-multigpu-normalized-low-sps-2nd-aprt
-checkpoint_file: epoch_2000.pt
+checkpoints_folder: /ephemeral/outputs/28-07-normalized-second
+checkpoint_file: epoch_1000.pt
 config_file: config.yaml
 device: "cuda"
 dataloader:
-  split: test
+  dataset: scenes_dataset 
   batch_size: 128
   num_workers: 4
 shapenet:
+  split: test
   path: "data/ShapeNet"
   normalize: true
   categories: null
+scenes_dataset:
+  split: val
+  path: "data/scannetpp"
+  normalize: true
+  gt: true
+  fps: true
 evaluation:
   resolution: 100 

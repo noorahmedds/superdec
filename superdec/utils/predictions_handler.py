@@ -5,6 +5,7 @@ import trimesh
 import open3d as o3d
 
 from superdec.utils.visualizations import generate_ncolors
+from superdec.utils.transforms import transform_to_primitive_frame
 
 class PredictionHandler:
     def __init__(self, predictions: Dict[str, np.ndarray]):
@@ -62,6 +63,21 @@ class PredictionHandler:
         self.exponents = np.concatenate((self.exponents, outdict['shape'].cpu().numpy()), axis=0)
         self.exist = np.concatenate((self.exist, outdict['exist'].cpu().numpy()), axis=0)
     
+    @torch.no_grad()
+    def get_occupancy(self, points):
+        p = torch.tensor(points[None,...].repeat(self.translation.shape[0], 0)).float()
+        tr = torch.tensor(self.translation)
+        ro = torch.tensor(self.rotation)
+        ex = torch.tensor(self.exponents)
+
+        pc_inver = transform_to_primitive_frame(p, tr, ro)
+        a_1 = torch.pow((pc_inver[...,0]/ self.scale[..., None, 0])**2, 1/ ex[..., None, 0])
+        a_2 = torch.pow((pc_inver[...,1]/ self.scale[..., None, 1])**2, 1/ ex[..., None, 1])
+        a = torch.pow(a_1 + a_2, ex[..., None, 0] / (ex[..., None, 1] + ex[..., None, 0]))
+        b = torch.pow((pc_inver[...,2] / self.scale[..., None, 2])**2, 1/ ex[..., None, 0])
+        impl_fun = a + b - 1
+        return impl_fun < 0
+
     def get_segmented_pc(self, index):
         if isinstance(self.assign_matrix, torch.Tensor):
             assign_matrix = assign_matrix.cpu().numpy()[index]

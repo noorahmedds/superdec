@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset
 
 from superdec.data.transform import RotateAroundAxis3d, Scale3d, RandomMove3d, Compose, rotate_around_axis
-
+import open3d as o3d
 
 SHAPENET_CATEGORIES = {
     "04379243": "table", "02958343": "car", "03001627": "chair", "02691156": "airplane",
@@ -44,8 +44,8 @@ def get_transforms(split: str, cfg):
 
     return Compose([
         Scale3d(),
-        RotateAroundAxis3d(rotation_limit=np.pi / 2, axis=(0, 0, 1)),
-        RotateAroundAxis3d(rotation_limit=np.pi / 2, axis=(1, 0, 0)),
+        RotateAroundAxis3d(rotation_limit=np.pi / 24, axis=(0, 0, 1)),
+        RotateAroundAxis3d(rotation_limit=np.pi / 24, axis=(1, 0, 0)),
         RotateAroundAxis3d(rotation_limit=np.pi, axis=(0, 1, 0)),
         RandomMove3d(
             x_min=-0.1, x_max=0.1,
@@ -54,28 +54,61 @@ def get_transforms(split: str, cfg):
         ),
     ])
 
-
-class Scene(Dataset):
+class ScenesDataset(Dataset):
     def __init__(self, cfg):
         super().__init__()
-        self.path = os.path.join(cfg.scene.path, cfg.scene.name, 'pc')
-        self.z_up = cfg.scene.z_up 
-        self._gather_models()
+        self.gt = cfg.scenes_dataset.gt
+        gt_suffix = "_gt" if self.gt else ""
+        self.subfolder = f"pc{gt_suffix}"
+        self.path = os.path.join(cfg.scenes_dataset.path)
+        self.split = cfg.scenes_dataset.split
+        self.z_up = True
+        self.fps = cfg.scenes_dataset.fps if 'fps' in cfg.scenes_dataset else False
+        self.scenes = self._load_scenes()
+        self.models = self._gather_models()
+
+    def _load_scenes(self):
+        split_txt = f'{self.split}.txt'
+        if not os.path.exists(os.path.join(self.path, split_txt)):
+            print('Split %s does not exist.' % (split_txt))
+        with open(os.path.join(self.path, split_txt), 'r') as f:
+            scenes_names = f.read().split('\n')
+        return scenes_names
 
     def _gather_models(self):
-        self.models = [os.path.splitext(f)[0] for f in os.listdir(self.path) if f.endswith(".npz")]
+        models = []
+        for s in self.scenes:
+            try:
+                scene_path = os.path.join(self.path, s, self.subfolder)
+                model_ids = [os.path.splitext(f)[0] for f in os.listdir(scene_path) if f.endswith(".npz")]
+                models.extend([{'scene': s, 'model_id': m} for m in model_ids])
+            except FileNotFoundError:
+                continue
+        return models
 
     def __len__(self):
         return len(self.models)
 
     def __getitem__(self, idx):
         model = self.models[idx]
+        model_path = os.path.join(self.path, model['scene'], self.subfolder, f"{model['model_id']}.npz")
+        
+        pc_data = np.load(model_path)
+        points_tmp = pc_data['points']
 
-        pc_data = np.load(os.path.join(self.path, f"{model}.npz"))
-        n_points = pc_data["points"].shape[0]
+        n_points = points_tmp.shape[0]
 
-        idxs = np.random.choice(n_points, 4096)
-        points = pc_data["points"][idxs]
+        if n_points >= 4096:
+            if self.fps:
+                pcd = o3d.geometry.PointCloud()
+                pcd.points = o3d.utility.Vector3dVector(points_tmp)
+                points = np.asarray(pcd.farthest_point_down_sample(4096).points)
+            else:
+                idxs = np.random.choice(n_points, 4096, replace=False)
+                points = points_tmp[idxs]
+        else:
+            idxs = np.random.choice(n_points, 4096)
+            points = points_tmp[idxs]
 
         if self.z_up:
             points = rotate_around_axis(points, axis=(1,0,0), angle = -np.pi/2, center_point=np.zeros(3))
@@ -92,7 +125,55 @@ class Scene(Dataset):
         }
 
     def name(self):
-        return 'ShapeNet'
+        return 'ScenesDataset'
+
+
+class Scene(Dataset):
+    def __init__(self, cfg):
+        super().__init__()
+        self.gt = cfg.scene.gt
+        gt_suffix = "_gt" if self.gt else ""
+        self.path = os.path.join(cfg.scene.path, cfg.scene.name, f"pc{gt_suffix}")
+        self.z_up = cfg.scene.z_up 
+        self._gather_models()
+
+    def _gather_models(self):
+        self.models = [os.path.splitext(f)[0] for f in os.listdir(self.path) if f.endswith(".npz")]
+
+    def __len__(self):
+        return len(self.models)
+
+    def __getitem__(self, idx):
+        model = self.models[idx]
+        
+        pc_data = np.load(os.path.join(self.path, f"{model}.npz"))
+        points_tmp = pc_data['points']
+
+        n_points = points_tmp.shape[0]
+
+        if n_points >= 4096:
+            idxs = np.random.choice(n_points, 4096, replace=False)
+            points = points_tmp[idxs]
+        else:
+            idxs = np.random.choice(n_points, 4096)
+            points = points_tmp[idxs]
+
+        if self.z_up:
+            points = rotate_around_axis(points, axis=(1,0,0), angle = -np.pi/2, center_point=np.zeros(3))
+
+        points, translation, scale  = normalize_points(points)
+
+        return {
+            "points": torch.from_numpy(points),
+            "translation": torch.from_numpy(translation),
+            "scale": scale,
+            "z_up": self.z_up,
+            "point_num": points.shape[0],
+            "model_id": model
+        }
+
+    def name(self):
+        return 'Scene'
 
 
 
@@ -135,7 +216,7 @@ class ShapeNet(Dataset):
         model_path = os.path.join(self.data_root, model['category'], model['model_id'])
         
 
-        if False: #TODO wait for downsampling to end
+        if self.split == 'test': 
             pc_data = np.load(os.path.join(model_path, "pointcloud_4096.npz"))
             points = pc_data["points"]
             normals = pc_data["normals"]

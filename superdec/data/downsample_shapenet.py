@@ -12,6 +12,9 @@ for c in tqdm(categories):
     models = [m for m in os.listdir(category_path)if os.path.isdir(os.path.join(category_path, m))]
     for m in tqdm(models):
         model_path = os.path.join(data_root, c, m)
+        if os.path.exists(os.path.join(model_path, "pointcloud_4096.npz")):
+            print(f"Skipping already downsampled model: {model_path}")
+            continue
         pc_data = np.load(os.path.join(model_path, "pointcloud.npz"))
         points = pc_data["points"]
         normals = pc_data["normals"]

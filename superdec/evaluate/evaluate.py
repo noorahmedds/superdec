@@ -6,7 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 from superdec.superdec import SuperDec
 from superdec.utils.predictions_handler import PredictionHandler
-from superdec.utils.evaluation import get_outdict
+from superdec.utils.evaluation import get_outdict, build_dataloader
 from superdec.loss.loss import Loss
 from superdec.data.dataloader import ShapeNet, denormalize_outdict, denormalize_points
 from typing import Dict, Any
@@ -17,10 +17,9 @@ class Evaluator:
     Evaluates the reconstruction quality of a model by computing Chamfer distances
     and the average number of primitives on a given dataset.
     """
-    def __init__(self, device: str, cfg: DictConfig, dataloader: DataLoader, split: str = 'val', mesh_resolution: int = 100):
+    def __init__(self, device: str, cfg: DictConfig, dataloader: DataLoader, mesh_resolution: int = 100):
         self.device = device
         self.cfg = cfg
-        self.split = split
         self.dataloader = dataloader
         self.mesh_resolution = mesh_resolution
         
@@ -46,8 +45,11 @@ class Evaluator:
         count = 0
         with torch.no_grad():
             for j, batch in tqdm(enumerate(self.dataloader)):
-                points = batch['points'].to(self.device).float()  # (B, N, 3)
-                normals = batch['normals'].to(self.device).float()
+                points = batch['points'].to(self.device).float()  
+                if 'normals' in batch.keys(): 
+                    normals = batch['normals'].to(self.device).float()
+                else:
+                    normals = None
                 batch['translation'] = batch['translation'].to(self.device)
                 batch['scale'] = batch['scale'].to(self.device)
                 names = batch.get('model_id', np.arange(points.shape[0]))
@@ -64,10 +66,15 @@ class Evaluator:
                 exist = outdict['exist'].cpu().numpy()  # (B, P)
                 
                 for i, mesh in enumerate(pred_meshes):
+                    if mesh is None: 
+                        continue
                     pc_pred, idx = mesh.sample(gt_pcs.shape[1], return_index = True)
                     normals_pred = mesh.face_normals[idx] # get predicted normals
                     gt_pc = gt_pcs[i].cpu().numpy()
-                    gt_normal = normals[i].cpu().numpy()
+                    if normals is not None:
+                        gt_normal = normals[i].cpu().numpy()
+                    else:
+                        gt_normal = None
                     out_dict_cur = get_outdict(pc_pred, normals_pred, gt_pc, gt_normal)
                     out_dict_cur['num_primitives'] = (exist[i] > 0.5).sum()
                     if i == 0 and j == 0:
@@ -98,14 +105,14 @@ def main(cfg: DictConfig) -> None:
     device = cfg.get('device', 'cuda')
     mesh_resolution = cfg.evaluation.resolution
     # Dataloader
-    dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
-    dataloader = DataLoader(dataset, batch_size=cfg.dataloader.batch_size, shuffle=False, num_workers=cfg.dataloader.num_workers)
-    # Evaluator
+    dataloader = build_dataloader(cfg)
+    # dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
+    # dataloader = DataLoader(dataset, batch_size=cfg.dataloader.batch_size, shuffle=False, num_workers=cfg.dataloader.num_workers)
+    # # Evaluator
     evaluator = Evaluator(
         device=device,
         cfg=cfg,
         dataloader=dataloader,
-        split=cfg.dataloader.split,
         mesh_resolution=mesh_resolution
     )
     # Evaluate

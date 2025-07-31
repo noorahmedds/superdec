@@ -17,13 +17,14 @@ def main(cfg: DictConfig) -> None:
 
     device = cfg.get('device', 'cuda')
     # Dataloader
+    #gt_suffix = '_gt' if cfg.scene.gt else ''
     if cfg.dataset == 'shapenet':
         dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
         filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.dataloader.split}.npz'
         z_up = False
     elif cfg.dataset == 'scene':
         dataset = Scene(cfg=cfg)
-        filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.scene.name}.npz'
+        filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.scene.name}_rdm.npz'
         z_up = cfg.scene.z_up
 
     dataloader = DataLoader(dataset, batch_size=cfg.dataloader.batch_size, shuffle=False, num_workers=cfg.dataloader.num_workers)
@@ -54,6 +55,7 @@ def main(cfg: DictConfig) -> None:
                 pred_handler.append_outdict(outdict, points, names)
 
     pred_handler.save_npz(os.path.join(cfg.checkpoints_folder, filename)) # this step takes a lot of time (~1 minute)
+    print(f"Results saved to {os.path.join(cfg.checkpoints_folder, filename)}")
 
 
 if __name__ == "__main__":

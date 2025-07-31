@@ -14,3 +14,4 @@ render*
 *.mp4
 build*
 data*
+tmp*

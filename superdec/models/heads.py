@@ -5,7 +5,7 @@ import torch
 class SuperDecHead(nn.Module):
     """Head for Superquadrics Prediction"""
     
-    def __init__(self, emb_dims, n_queries=16):
+    def __init__(self, emb_dims):
         super(SuperDecHead, self).__init__()
         self.emb_dims = emb_dims
         self.scale_head = nn.Linear(emb_dims, 3)
