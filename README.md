@@ -61,7 +61,7 @@ The dataset will be saved to `data/ShapeNet/`.
 
 ### Download Pre-trained Models
 
-Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/1_pEHMEWdsNjHX86blL7Zgjs239xPJ7j6?usp=share_link):
+Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/1_pEHMEWdsNjHX86blL7Zgjs239xPJ7j6?usp=share_link) and store them in `checkpoints`.
 
 | Model | Dataset | Normalized | Link |
 |:------|:--------|:-----------|:-----|
@@ -102,15 +102,14 @@ python superdec/visualization/object_visualizer.py
 
 Our method achieves state-of-the-art performance on ShapeNet benchmark for primitive-based object decomposition. Detailed quantitative results and comparisons are available in our [paper](https://arxiv.org/abs/2504.00992).
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 superdec/
+├── checkpoints/          # Checkpoints storage
 ├── data/                 # Dataset storage
 ├── scripts/             # Utility scripts
 ├── superdec/           # Main package
-│   ├── evaluate/       # Evaluation scripts
-│   └── visualization/ # Visualization tools
 ├── trainer/            # Training scripts
 └── requirements.txt   # Dependencies
 ```
@@ -136,7 +135,7 @@ If you find SuperDec useful in your research, please consider citing:
 @inproceedings{fedele2025superdec,
   title={SuperDec: 3D Scene Decomposition with Superquadric Primitives},
   author={Fedele, Elisabetta and Sun, Boyang and Guibas, Leonidas and Pollefeys, Marc and Engelmann, Francis},
-  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
   year={2025}
 }
 ```
