@@ -11,13 +11,9 @@ from typing import Dict, Any
 from tqdm import tqdm
 
 def main(cfg: DictConfig) -> None:
-    """
-    Main evaluation entrypoint. Loads config, runs evaluation, prints results.
-    """
 
     device = cfg.get('device', 'cuda')
     # Dataloader
-    #gt_suffix = '_gt' if cfg.scene.gt else ''
     if cfg.dataset == 'shapenet':
         dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
         filename = f'{cfg.dataset}_{cfg.dataloader.split}.npz'

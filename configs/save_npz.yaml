@@ -1,4 +1,4 @@
-checkpoints_folder: ./checkpoints/shapenet
+checkpoints_folder: checkpoints/shapenet
 config_file: config.yaml
 device: "cuda"
 dataset: shapenet
