@@ -101,17 +101,23 @@ torchrun --nproc_per_node=4 train/train.py
 
 ### Evaluation and Visualization
 
-Generate results on ShapeNet test set:
+Generate and visualize results on ShapeNet test set:
 
 ```bash
 # Convert results to NPZ format
 python superdec/evaluate/to_npz.py
 
-# Visualize results
+# Visualize results using viser
 python superdec/visualization/object_visualizer.py
 ```
 
 > **Note:** Mesh generation may take time depending on the chosen resolution.
+
+<p align="center">
+  <img src="https://super-dec.github.io/static/figures/compressed/viser/overlay.jpeg" width="32%" />
+  <img src="https://super-dec.github.io/static/figures/compressed/viser/sq.jpeg" width="32%" />
+  <img src="https://super-dec.github.io/static/figures/compressed/viser/seg.jpeg" width="32%" />
+</p>
 
 
 
