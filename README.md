@@ -68,6 +68,8 @@ Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/
 | ShapeNet | ShapeNet | ❌ | [📁 Download](https://drive.google.com/drive/folders/1kXgJJ_6SvvJt6kh53rs30feAnD-i4SBL?usp=share_link) |
 | Normalized | ShapeNet | ✅ | [📁 Download](https://drive.google.com/drive/folders/1a-mV8FH6YSA0TQyDdvbeaicHf9tPfZrR?usp=share_link) |
 
+> **Note:** We use the ShapeNet checkpoint to evaluate on ShapeNet and the Normalized checkpoint to evaluate on objects from generic 3D scenes.
+
 ## 🎯 Usage
 
 ### Training
