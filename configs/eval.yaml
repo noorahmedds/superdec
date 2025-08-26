@@ -1,21 +1,21 @@
-checkpoints_folder: /ephemeral/outputs/28-07-normalized-second
+checkpoints_folder: /ephemeral/outputs/09-07-classic-par-2
 checkpoint_file: epoch_1000.pt
 config_file: config.yaml
 device: "cuda"
 dataloader:
-  dataset: scenes_dataset 
+  dataset: shapenet 
   batch_size: 128
   num_workers: 4
 shapenet:
   split: test
   path: "data/ShapeNet"
-  normalize: true
+  normalize: false
   categories: null
 scenes_dataset:
   split: val
   path: "data/scannetpp"
   normalize: true
   gt: true
-  fps: true
+  fps: false
 evaluation:
   resolution: 100 

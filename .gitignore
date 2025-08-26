@@ -15,3 +15,5 @@ render*
 build*
 data*
 tmp*
+*.pt
+checkpoints*

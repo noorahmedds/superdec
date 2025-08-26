@@ -1,0 +1,5 @@
+dataset: shapenet # or scene
+split: test # or train, val | scene ID for scenes
+name_checkpoint_folder: shapenet
+base_path: checkpoints
+resolution: 30 # resolution of the superquadrics

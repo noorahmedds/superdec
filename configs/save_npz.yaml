@@ -1,20 +1,19 @@
-checkpoints_folder: /ephemeral/outputs/28-07-normalized-second
-epoch: 1000
+checkpoints_folder: ./checkpoints/shapenet
 config_file: config.yaml
 device: "cuda"
-dataset: scene
+dataset: shapenet
 dataloader:
-  split: val
+  split: test
   batch_size: 128
   num_workers: 4
 shapenet:
   path: "data/ShapeNet"
-  normalize: true
+  normalize: false
   categories: null
 scene:
-  path: "/ephemeral/scannetpp"
-  name: '2a1b555966'
+  path: PATH_TO_YOUR_SCENE_DATASET
+  name: SCENE_ID
   z_up: true
   gt: true
 evaluation:
-  resolution: 5 
+  resolution: 50 

@@ -20,16 +20,16 @@ def main(cfg: DictConfig) -> None:
     #gt_suffix = '_gt' if cfg.scene.gt else ''
     if cfg.dataset == 'shapenet':
         dataset = ShapeNet(split=cfg.dataloader.split, cfg=cfg)
-        filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.dataloader.split}.npz'
+        filename = f'{cfg.dataset}_{cfg.dataloader.split}.npz'
         z_up = False
     elif cfg.dataset == 'scene':
         dataset = Scene(cfg=cfg)
-        filename = f'{cfg.dataset}_{str(cfg.epoch)}_{cfg.scene.name}_rdm.npz'
+        filename = f'{cfg.dataset}_{cfg.scene.name}.npz'
         z_up = cfg.scene.z_up
 
     dataloader = DataLoader(dataset, batch_size=cfg.dataloader.batch_size, shuffle=False, num_workers=cfg.dataloader.num_workers)
-    ckp_path = os.path.join(cfg.checkpoints_folder, f'epoch_{str(cfg.epoch)}.pt')
-    config_path = os.path.join(cfg.checkpoints_folder, cfg.config_file)
+    ckp_path = os.path.join(cfg.checkpoints_folder, f'ckpt.pt')
+    config_path = os.path.join(cfg.checkpoints_folder, 'config.yaml')
     if not os.path.isfile(ckp_path):
         raise FileNotFoundError(f"Checkpoint not found: {ckp_path}")
     checkpoint = torch.load(ckp_path, map_location=device, weights_only=False)
