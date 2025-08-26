@@ -120,7 +120,7 @@ We adapted some codes from some awesome repositories including [superquadric_par
 
 ## 🤝 Contributing
 
-We welcome contributions! Please feel free to submit issues, feature requests, or pull requests. For more specific questions or collaborations, please contact [Elisabetta Fedele](mailto:efedele@ethz.ch).
+We welcome contributions! Please feel free to submit issues, feature requests, or pull requests. For more specific questions or collaborations, please contact [Elisabetta](mailto:efedele@ethz.ch).
 
 
 ## 🛣️ Roadmap
