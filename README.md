@@ -66,8 +66,8 @@ You can donwload the checkpoints from [this link](https://drive.google.com/drive
 | normalized| Shapenet | Yes | [folder](https://drive.google.com/drive/folders/1a-mV8FH6YSA0TQyDdvbeaicHf9tPfZrR?usp=share_link) | 
 ---
 
-## Run on objects ✨
-You can use the pretrained checkpoints to run SuperDec on arbitrary objects. If you followed the instruction to download the ShapeNet data and the checkpoints, you can visualize the results on the ShapeNet's test set by running:
+## Visualize results on ShapeNet ✨
+If you followed the instruction to download the ShapeNet data and the checkpoints, you can visualize the results on the ShapeNet's test set by running:
 ```bash
 python superdec/evaluate/to_npz.py
 python superdec/visualization/object_visualizer.py
@@ -76,8 +76,6 @@ Note that depending on the chosen resolution it may takes some time to compute t
 
 ## Acknowledgements
 We adapted some codes from some awesome repositories including [superquadric_parsing](https://github.com/paschalidoud/superquadric_parsing), [CuboidAbstractionViaSeg](https://github.com/SilenKZYoung/CuboidAbstractionViaSeg), [volumentations](https://github.com/kumuji/volumentations), [LION](https://github.com/nv-tlabs/LION), [occupancy_networks](https://github.com/autonomousvision/occupancy_networks), and [convolutional_occupancy_networks](https://github.com/autonomousvision/convolutional_occupancy_networks). Thanks for making codes and data public available. 
-
-
 
 ## TODO
 
