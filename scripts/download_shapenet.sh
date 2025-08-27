@@ -16,7 +16,7 @@ if [ "$custom_dir" = "y" ]; then
     cd "$YOUR_DIR"
     echo "Downloading dataset to $YOUR_DIR..."
     wget https://s3.eu-central-1.amazonaws.com/avg-projects/occupancy_networks/data/dataset_small_v1.1.zip
-    unzip dataset_small_v1.1.zip '*.pointcloud.npz'
+    unzip dataset_small_v1.1.zip '*pointcloud.npz'
     unzip dataset_small_v1.1.zip '*.lst'
     rm dataset_small_v1.1.zip
 
@@ -29,7 +29,7 @@ else
     cd "$DEFAULT_DIR"
     echo "Downloading dataset to $DEFAULT_DIR..."
     wget https://s3.eu-central-1.amazonaws.com/avg-projects/occupancy_networks/data/dataset_small_v1.1.zip
-    unzip dataset_small_v1.1.zip '*.pointcloud.npz'
+    unzip dataset_small_v1.1.zip '*pointcloud.npz'
     unzip dataset_small_v1.1.zip '*.lst'
     rm dataset_small_v1.1.zip
 fi
