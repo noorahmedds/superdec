@@ -51,7 +51,7 @@ python setup_sampler.py build_ext --inplace
 
 ### Download Pre-trained Models
 
-Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/1_pEHMEWdsNjHX86blL7Zgjs239xPJ7j6?usp=share_link) and store them in `checkpoints`.
+Download the checkpoints:
 
 ```bash
 bash scripts/download_checkpoints.sh
