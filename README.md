@@ -67,9 +67,9 @@ Alternatively, you can download the individual folders using the links below.
 > **Note:** We use the `shapenet` model checkpoint to evaluate on ShapeNet and the `normalized` model checkpoint to evaluate on objects from generic 3D scenes.
 
 ### Inference Example
-
+Once downloaded the checkpoints you can run an inference example by doing:
 ```bash
-#TODO
+python demo_viser.py
 ```
 
 ### Project Structure
@@ -81,9 +81,11 @@ superdec/
 │   └── shapenet/         # Checkpoint and config for ShapeNet objects
 ├── data/                 # Dataset storage
 │   └── ShapeNet/         # ShapeNet dataset
+├── examples/              # Inference example
+│   └── chair.ply         # ShapeNet chair
 ├── scripts/              # Utility scripts
 ├── superdec/             # Main package
-├── trainer/              # Training scripts
+├── train/                # Training scripts
 └── requirements.txt      # Dependencies
 ```
 
