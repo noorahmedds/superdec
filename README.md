@@ -66,6 +66,12 @@ Alternatively, you can download the individual folders using the links below.
 
 > **Note:** We use the `shapenet` model checkpoint to evaluate on ShapeNet and the `normalized` model checkpoint to evaluate on objects from generic 3D scenes.
 
+### Inference Example
+
+```bash
+#TODO
+```
+
 ### Project Structure
 After having downloaded ShapeNet and the checkpoints, the following project structure is expected:
 ```
