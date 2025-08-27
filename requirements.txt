@@ -12,3 +12,4 @@ Cython
 matplotlib
 open3d
 viser
+gdown
