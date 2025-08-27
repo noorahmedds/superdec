@@ -49,16 +49,6 @@ pip install -e .
 python setup_sampler.py build_ext --inplace
 ```
 
-### Download Data
-
-Download the ShapeNet dataset (73.4 GB):
-
-```bash
-bash scripts/download_shapenet.sh
-```
-
-The dataset will be saved to `data/ShapeNet/`.
-
 ### Download Pre-trained Models
 
 Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/1_pEHMEWdsNjHX86blL7Zgjs239xPJ7j6?usp=share_link) and store them in `checkpoints`.
@@ -92,6 +82,16 @@ superdec/
 ```
 
 ## 🎯 Usage
+
+### Download Data
+
+Download the ShapeNet dataset (73.4 GB):
+
+```bash
+bash scripts/download_shapenet.sh
+```
+
+The dataset will be saved to `data/ShapeNet/`.
 
 ### Training
 
