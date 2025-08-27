@@ -1,4 +1,5 @@
 checkpoints_folder: checkpoints/shapenet
+checkpoint_file: ckpt.pt
 config_file: config.yaml
 device: "cuda"
 dataset: shapenet

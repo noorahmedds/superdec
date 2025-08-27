@@ -24,7 +24,7 @@ def main(cfg: DictConfig) -> None:
         z_up = cfg.scene.z_up
 
     dataloader = DataLoader(dataset, batch_size=cfg.dataloader.batch_size, shuffle=False, num_workers=cfg.dataloader.num_workers)
-    ckp_path = os.path.join(cfg.checkpoints_folder, f'ckpt.pt')
+    ckp_path = os.path.join(cfg.checkpoints_folder, cfg.checkpoint_file)
     config_path = os.path.join(cfg.checkpoints_folder, 'config.yaml')
     if not os.path.isfile(ckp_path):
         raise FileNotFoundError(f"Checkpoint not found: {ckp_path}")

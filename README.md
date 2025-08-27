@@ -91,13 +91,14 @@ superdec/
 
 **Single GPU training:**
 ```bash
-python trainer/train.py
+python train/train.py "optimizer.lr=1e-4"
 ```
 
 **Multi-GPU training (4 GPUs):**
 ```bash
 torchrun --nproc_per_node=4 train/train.py
 ```
+> **Note:** Weights & Biases is disabled by default but you can activate it in the [training config](configs/train.yaml).
 
 ### Evaluation and Visualization
 
@@ -111,7 +112,7 @@ python superdec/evaluate/to_npz.py
 python superdec/visualization/object_visualizer.py
 ```
 
-> **Note:** Mesh generation may take time depending on the chosen resolution.
+> **Note:** Saving the .npz file and mesh generation may take time depending on the size of the dataset and of the chosen resolution for the superquadrics, respectively.
 
 <p align="center">
   <img src="https://super-dec.github.io/static/figures/compressed/viser/overlay.jpeg" width="32%" />

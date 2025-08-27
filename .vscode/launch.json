@@ -3,16 +3,6 @@
         {
             "type": "debugpy",
             "request": "launch",
-            "name": "Bool to pc",
-            "program": "${workspaceFolder}/superdec/data/bool_masks_to_pc.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
-            "envFile": "${workspaceFolder}/.env",
-        },
-
-        {
-            "type": "debugpy",
-            "request": "launch",
             "name": "Train",
             "program": "${workspaceFolder}/train/train.py",
             "console": "integratedTerminal",

@@ -1,6 +1,6 @@
-checkpoints_folder: /ephemeral/outputs/09-07-classic-par-2
-checkpoint_file: epoch_1000.pt
-config_file: config.yaml
+checkpoints_folder: #PATH TO CHECKPOINT FOLDER
+checkpoint_file: # NAME of CHECKPOINT FILE
+config_file: config.yaml # NAME of CONFIG FILE
 device: "cuda"
 dataloader:
   dataset: shapenet 

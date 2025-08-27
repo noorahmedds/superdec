@@ -217,9 +217,17 @@ class ShapeNet(Dataset):
         
 
         if self.split == 'test': 
-            pc_data = np.load(os.path.join(model_path, "pointcloud_4096.npz"))
-            points = pc_data["points"]
-            normals = pc_data["normals"]
+            try : # for more rigorous evaluation on the test set, we use the 4096 points version downsampled with fps
+                pc_data = np.load(os.path.join(model_path, "pointcloud_4096.npz"))
+                points = pc_data["points"]
+                normals = pc_data["normals"]
+            except FileNotFoundError:
+                pc_data = np.load(os.path.join(model_path, "pointcloud.npz"))
+                n_points = pc_data["points"].shape[0]
+                idxs = np.random.choice(n_points, 4096, replace=False)
+                points = pc_data["points"][idxs]
+                normals = pc_data["normals"][idxs]
+            
         else:
             pc_data = np.load(os.path.join(model_path, "pointcloud.npz"))
             n_points = pc_data["points"].shape[0]
