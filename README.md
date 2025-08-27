@@ -68,7 +68,7 @@ Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/
 | shapenet | ShapeNet | ❌ | [shapenet](https://drive.google.com/drive/folders/1kXgJJ_6SvvJt6kh53rs30feAnD-i4SBL?usp=share_link) |
 | normalized | ShapeNet | ✅ | [normalized](https://drive.google.com/drive/folders/1a-mV8FH6YSA0TQyDdvbeaicHf9tPfZrR?usp=share_link) |
 
-> **Note:** We use the ShapeNet checkpoint to evaluate on `shapenet` and the `normalized` model checkpoint to evaluate on objects from generic 3D scenes.
+> **Note:** We use the `shapenet` model checkpoint to evaluate on ShapeNet and the `normalized` model checkpoint to evaluate on objects from generic 3D scenes.
 
 ### Project Structure
 After having downloaded ShapeNet and the checkpoints, the following project structure is expected:
