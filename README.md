@@ -61,7 +61,22 @@ The dataset will be saved to `data/ShapeNet/`.
 
 ### Download Pre-trained Models
 
-Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/1_pEHMEWdsNjHX86blL7Zgjs239xPJ7j6?usp=share_link) and store them in `checkpoints`. Alternatively, you can download the individual folders using the links below.
+Download checkpoints from [Google Drive](https://drive.google.com/drive/folders/1_pEHMEWdsNjHX86blL7Zgjs239xPJ7j6?usp=share_link) and store them in `checkpoints`.
+
+```bash
+mkdir -p checkpoints/shapenet
+mkdir -p checkpoints/normalized
+
+gdown 1Nsgtm_nCyp6qbRgnenoJVqL88eS1GXmC -O checkpoints/shapenet/config.yaml
+gdown 1ypCViehSOzkCFL6dcCDfdPRzuj_MIayz -O checkpoints/shapenet/ckpt.pt
+
+gdown 1l0wpNssH7f3V61SUA4VcjrVy-ganmIp_ -O checkpoints/normalized/config.yaml
+gdown 1r1ydYXkMf7q6U99ze78-zkLiKnO3ICGk -O checkpoints/normalized/ckpt.pt
+```
+
+
+
+Alternatively, you can download the individual folders using the links below.
 
 | Model | Dataset | Normalized | Link |
 |:------|:--------|:-----------:|:-----|
