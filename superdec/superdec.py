@@ -41,6 +41,10 @@ class SuperDec(nn.Module):
     def forward(self, x):
         point_features = self.point_encoder(x)
 
+        # TODO: Aggregate the point features with the embeddings from the mistral model
+        # 1. Start with simple addition and see if the loss is still reducing
+        # 2. Concatenate and then learn a 1x1 convolution to reduce depth to the original
+
         refined_queries_list, assign_matrices = self.layers(self.init_queries, point_features)
         outdict_list = []
 

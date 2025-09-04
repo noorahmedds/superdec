@@ -97,6 +97,7 @@ class Trainer:
 
         for batch in pbar:
             pc, normals = batch['points'].cuda().float(), batch['normals'].cuda().float()
+            # TODO: Read the embeddings here as well
             outdict = self.model(pc)
             loss, loss_dict = self.loss_fn(pc, normals, outdict)
 

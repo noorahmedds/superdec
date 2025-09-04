@@ -55,7 +55,7 @@ superdec:
         eps: 0  
 
 shapenet:
-  path: data/ShapeNet
+  path: ${oc.env:TMP, "data"}/ShapeNet # Update to use TMPDIR here
   categories: null #['03001627'] 
   normalize: False
 

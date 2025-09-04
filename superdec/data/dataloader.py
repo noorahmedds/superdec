@@ -215,6 +215,7 @@ class ShapeNet(Dataset):
         model = self.models[idx]
         model_path = os.path.join(self.data_root, model['category'], model['model_id'])
         
+        # TODO [Noor] : Load the mistral captions here as well as the Numpy data
 
         if self.split == 'test': 
             try : # for more rigorous evaluation on the test set, we use the 4096 points version downsampled with fps
