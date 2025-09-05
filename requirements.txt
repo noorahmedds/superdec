@@ -11,3 +11,5 @@ matplotlib
 open3d
 viser
 gdown
+transformers
+accelerate

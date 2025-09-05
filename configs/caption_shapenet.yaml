@@ -1,0 +1,36 @@
+seed: 42
+
+run:
+  split: train # one of: train, val, test
+
+shapenet:
+  path: ${oc.env:TMP, "data"}/ShapeNet
+  categories: null # e.g., ['03001627'] for chairs only
+  normalize: True
+
+captioner:
+  gpt_model: gpt-mini # mapped to gpt-4o-mini
+  openai_api_key_env: OPENAI_API_KEY
+  timeout: 30
+  max_retries: 3
+
+embedding:
+  provider: hf
+  model_id: mistralai/Mistral-7B-Instruct-v0.3
+  device: auto # auto|cuda|cpu
+  dtype: auto # auto|float16|bfloat16|float32
+  max_length: 256
+  pooling: mean # mean|cls
+  quantize: null # null|8bit|4bit (requires bitsandbytes)
+  api_key_env: MISTRAL_API_KEY # ignored for hf provider
+  max_retries: 3 # ignored for hf provider
+
+render:
+  size: 512
+  elev: 20
+  azim: 40
+  bgcolor: white
+
+io:
+  out_root: ${oc.env:TMP, "data"}/ShapeNetCaptions
+  overwrite: false
