@@ -23,12 +23,17 @@ class SuperDec(nn.Module):
 
         self.point_encoder = StackedPVConv(ctx.point_encoder)
 
-        decoder_layer = DecoderLayer(d_model=self.emb_dims, nhead=self.n_heads, dim_feedforward=self.dim_feedforward, 
+        # After testing concat, reduce depth back to point encoder output channels
+        self.cat_llm = ctx.llm_cat
+        self.out_channels = ctx.point_encoder.l3.out_channels
+        self.post_concat_proj = nn.Conv1d(self.out_channels*2, self.out_channels, kernel_size=1)
+
+        decoder_layer = DecoderLayer(d_model=self.emb_dims, nhead=self.n_heads, dim_feedforward=self.dim_feedforward,
                                                batch_first=True, swapped_attention=ctx.decoder.swapped_attention)
-        self.layers = TransformerDecoder(decoder_layer=decoder_layer, n_layers=self.n_layers, 
-                                         max_len=self.n_queries, pos_encoding_type=self.pos_encoding_type, 
+        self.layers = TransformerDecoder(decoder_layer=decoder_layer, n_layers=self.n_layers,
+                                         max_len=self.n_queries, pos_encoding_type=self.pos_encoding_type,
                                          masked_attention=ctx.decoder.masked_attention)
-        
+
         self.layers.project_queries = nn.Sequential(
             nn.Linear(self.emb_dims, self.emb_dims),
             nn.ReLU(),
@@ -37,27 +42,32 @@ class SuperDec(nn.Module):
         self.heads = SuperDecHead(emb_dims=self.emb_dims)
         init_queries = torch.zeros(self.n_queries + 1, self.emb_dims)
         self.register_buffer('init_queries', init_queries) # TODO double check -> new codebase
-    
-    def forward(self, x):
-        point_features = self.point_encoder(x)
 
-        # TODO: Aggregate the point features with the embeddings from the mistral model
-        # 1. Start with simple addition and see if the loss is still reducing
-        # 2. Concatenate and then learn a 1x1 convolution to reduce depth to the original
+    def forward(self, x):
+        point_features = self.point_encoder(x) # [bs, n_points, C]
+
+        if self.cat_llm:
+            # Concatenate test_llm_embedding with all point features along channel dim
+            bs, n_points, c = point_features.shape
+            test_llm_embedding = torch.rand(size=(bs, self.out_channels), device=point_features.device, dtype=point_features.dtype)
+            test_llm_embedding = test_llm_embedding[:, None, :].expand(bs, n_points, self.out_channels)
+            point_features = torch.cat([point_features, test_llm_embedding], dim=-1)  # [bs, n_points, C+self.out_channels]
+
+            # Reduce depth back to ctx.pointencoder.out_channel via 1x1 conv
+            point_features = self.post_concat_proj(point_features.transpose(1, 2)).transpose(1, 2)
 
         refined_queries_list, assign_matrices = self.layers(self.init_queries, point_features)
         outdict_list = []
 
-        # TODO remove this in the final version. there is no need to compute the output for all of them   
         thred = 24
-        for i, q in enumerate(refined_queries_list): 
+        for i, q in enumerate(refined_queries_list):
             outdict_list += [self.heads(q[:,:-1,...])]
             assign_matrix = assign_matrices[i]
             assign_matrix = torch.softmax(assign_matrix, dim=2)
-            outdict_list[i]['assign_matrix'] = assign_matrix 
+            outdict_list[i]['assign_matrix'] = assign_matrix
             # outdict_list[i]['exist'] = (assign_matrix.sum(1) > thred).to(torch.float32).detach()[...,None]
 
         if self.lm_optimization:
             outdict_list[-1] = self.lm_optimizer(outdict_list[-1], x)
-            
+
         return outdict_list[-1]

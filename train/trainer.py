@@ -1,4 +1,4 @@
-import os 
+import os
 import numpy as np
 from tqdm import tqdm
 import torch
@@ -71,7 +71,7 @@ class Trainer:
 
             total_loss += loss.item()
             total_batches += 1
-            
+
             # Accumulate loss components
             for k, v in loss_dict.items():
                 avg_loss_dict[k] = avg_loss_dict.get(k, 0.0) + v
@@ -98,6 +98,7 @@ class Trainer:
         for batch in pbar:
             pc, normals = batch['points'].cuda().float(), batch['normals'].cuda().float()
             # TODO: Read the embeddings here as well
+
             outdict = self.model(pc)
             loss, loss_dict = self.loss_fn(pc, normals, outdict)
 
@@ -126,30 +127,30 @@ class Trainer:
         if self.wandb_run is not None and is_main_process():
             log_dict = {"train/loss": avg_loss}
             log_dict.update({f"train/{k}": v for k, v in avg_loss_dict.items()})
-            
+
             # Log learning rate
             if self.optimizer.param_groups:
                 lr = self.optimizer.param_groups[0].get('lr', None)
                 if lr is not None:
                     log_dict["train/lr"] = lr
-                    
+
             self.wandb_run.log(log_dict, step=epoch)
 
     def train(self):
         """Main training loop."""
         save_every = getattr(self.ctx, 'save_every_n_epochs', 1)
-        
+
         for epoch in range(self.start_epoch, self.num_epochs):
             # Training phase
             self.train_one_epoch(epoch)
-            
+
             # Evaluation phase (every epoch in the main process)
             if is_main_process():
                 val_metrics = self.evaluate(epoch)
                 val_loss = val_metrics.get('loss', None) or list(val_metrics.values())[0]
 
                 do_save = ((epoch + 1) % save_every == 0) or (epoch == self.num_epochs - 1)
-                if do_save: 
+                if do_save:
                     self.save_checkpoint(epoch, val_loss)
 
                 # Log validation metrics to wandb (every epoch)

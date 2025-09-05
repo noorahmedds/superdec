@@ -1,5 +1,5 @@
 seed: 42
-use_wandb: false
+use_wandb: true
 wandb:
   project: superdec
   entity: noorahmedds
@@ -12,6 +12,7 @@ checkpoints:
   keep_epoch: False
 
 superdec:
+  llm_cat: false
   decoder:
     n_queries: 16
     n_layers: 3 # number of transformer decoders
@@ -63,7 +64,7 @@ trainer:
   save_path: checkpoints
   save_every_n_epochs: 50
   num_epochs: 1000
-  batch_size: 32
+  batch_size: 16
   num_workers: 4
   evaluate_every_n_epochs: 1
   augmentations: True

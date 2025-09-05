@@ -17,7 +17,7 @@ set -Eeuo pipefail
 trap 'echo "[setup_buzz] Error on line $LINENO" >&2' ERR
 
 ENV_NAME="${1:-superdec}"
-PYTHON_VERSION="${PYTHON_VERSION:-3.9}"
+PYTHON_VERSION="${PYTHON_VERSION:-3.11}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -82,6 +82,7 @@ install_requirements() {
   if [ -f "$REQ_FILE" ]; then
     log "Installing pytorch first"
     pip install torch torchvision
+
     log "Installing Python packages from requirements.txt one by one"
     cat "$REQ_FILE" | xargs -n 1 pip install
   else

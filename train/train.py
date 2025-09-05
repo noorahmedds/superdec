@@ -61,8 +61,6 @@ def main(cfg: DictConfig):
     scheduler = build_scheduler(cfg, optimizer, len(dataloaders['train'])) # None if disabled
     loss_fn = build_loss(cfg).to(device)
 
-    
-
     cfg.trainer.save_path = os.path.join(cfg.trainer.save_path, cfg.run_name)
     if is_main_process() and not os.path.exists(cfg.trainer.save_path):
         os.makedirs(cfg.trainer.save_path, exist_ok=True)

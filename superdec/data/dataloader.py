@@ -35,7 +35,7 @@ def denormalize_outdict(outdict, translation, scale, z_up=False):
     scale = scale[:,None,None]
     translation = translation[:, None, :]
     outdict['scale'] = outdict['scale'] * scale
-    outdict['trans'] = outdict['trans'] * scale + translation 
+    outdict['trans'] = outdict['trans'] * scale + translation
     return outdict
 
 def get_transforms(split: str, cfg):
@@ -92,7 +92,7 @@ class ScenesDataset(Dataset):
     def __getitem__(self, idx):
         model = self.models[idx]
         model_path = os.path.join(self.path, model['scene'], self.subfolder, f"{model['model_id']}.npz")
-        
+
         pc_data = np.load(model_path)
         points_tmp = pc_data['points']
 
@@ -134,7 +134,7 @@ class Scene(Dataset):
         self.gt = cfg.scene.gt
         gt_suffix = "_gt" if self.gt else ""
         self.path = os.path.join(cfg.scene.path, cfg.scene.name, f"pc{gt_suffix}")
-        self.z_up = cfg.scene.z_up 
+        self.z_up = cfg.scene.z_up
         self._gather_models()
 
     def _gather_models(self):
@@ -145,7 +145,7 @@ class Scene(Dataset):
 
     def __getitem__(self, idx):
         model = self.models[idx]
-        
+
         pc_data = np.load(os.path.join(self.path, f"{model}.npz"))
         points_tmp = pc_data['points']
 
@@ -214,10 +214,10 @@ class ShapeNet(Dataset):
     def __getitem__(self, idx):
         model = self.models[idx]
         model_path = os.path.join(self.data_root, model['category'], model['model_id'])
-        
+
         # TODO [Noor] : Load the mistral captions here as well as the Numpy data
 
-        if self.split == 'test': 
+        if self.split == 'test':
             try : # for more rigorous evaluation on the test set, we use the 4096 points version downsampled with fps
                 pc_data = np.load(os.path.join(model_path, "pointcloud_4096.npz"))
                 points = pc_data["points"]
@@ -228,7 +228,7 @@ class ShapeNet(Dataset):
                 idxs = np.random.choice(n_points, 4096, replace=False)
                 points = pc_data["points"][idxs]
                 normals = pc_data["normals"][idxs]
-            
+
         else:
             pc_data = np.load(os.path.join(model_path, "pointcloud.npz"))
             n_points = pc_data["points"].shape[0]
